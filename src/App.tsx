@@ -8,12 +8,17 @@ import {
 } from 'lucide-react'
 import ProductsPage from './features/products/components/ProductsPage'
 import ProductDetailsPage from './features/products/components/ProductDetailsPage'
+import UsersPage from './features/users/components/UsersPage'
+import { PermissionGate } from './features/users/rbac'
+import { useDemoRole } from './features/users/useDemoRole'
+import './features/users/rbac.css'
 
 // Keep route metadata in one list so sidebar links stay consistent as sections grow.
 const navigation = [
   { label: 'Overview', path: '/', icon: LayoutDashboard },
   { label: 'Products', path: '/products', icon: Package },
   { label: 'Categories', path: '/categories', icon: Tag },
+  { label: 'Users & roles', path: '/users', icon: Users },
 ]
 
 // Sidebar owns only navigation presentation; the shell controls its collapsed and mobile states.
@@ -43,7 +48,7 @@ function Sidebar({ collapsed, onToggle, mobileOpen, onClose }: {
       <div className="sidebar-bottom">
         {!collapsed && <div className="plan-card"><div className="plan-icon"><Sparkles size={15} /></div><strong>Free plan</strong><span>Unlock more with a Pro plan.</span><button>Explore plans <ArrowUpRight size={13} /></button><div className="plan-progress"><i /></div><small>2 of 5 team members</small></div>}
         <button className="nav-link support-link" title={collapsed ? 'Help & support' : undefined}><CircleHelp size={18} /><span>Help & support</span></button>
-        <div className="profile-row"><div className="profile-avatar">JM</div>{!collapsed && <><div className="profile-copy"><strong>Jordan Miller</strong><span>jordan@studionorth.co</span></div><MoreHorizontal size={18} /></>}</div>
+        <div className="profile-row"><div className="profile-avatar">DM</div>{!collapsed && <><div className="profile-copy"><strong>Demo member</strong><span>Role preview only</span></div><MoreHorizontal size={18} /></>}</div>
       </div>
     </aside>
   </>
@@ -51,10 +56,11 @@ function Sidebar({ collapsed, onToggle, mobileOpen, onClose }: {
 
 // The top bar receives its current route title so it remains independent of route definitions.
 function Topbar({ title, onMenu }: { title: string; onMenu: () => void }) {
+  const { role, setRole } = useDemoRole()
   return <header className="topbar">
     <button className="icon-button mobile-menu" aria-label="Open navigation" onClick={onMenu}><Menu size={20} /></button>
     <div className="breadcrumbs"><span>Workspace</span><ChevronRight size={14} /><strong>{title}</strong></div>
-    <div className="topbar-actions"><button className="search-shortcut"><Search size={15} /><span>Search anything...</span><kbd>⌘ K</kbd></button><button className="icon-button top-help" aria-label="Help"><LifeBuoy size={18} /></button><button className="notification-button" aria-label="Notifications"><Bell size={18} /><i /></button><div className="topbar-divider" /><button className="top-profile"><span className="profile-avatar">JM</span><ChevronDown size={14} /></button></div>
+    <div className="topbar-actions"><label className="demo-role-switch"><span>Demo access</span><select aria-label="Choose demo role" value={role} onChange={event => setRole(event.target.value as 'admin' | 'moderator' | 'user')}><option value="admin">Admin</option><option value="moderator">Moderator</option><option value="user">User</option></select><ChevronDown size={12}/></label><button className="search-shortcut"><Search size={15} /><span>Search anything...</span><kbd>⌘ K</kbd></button><button className="icon-button top-help" aria-label="Help"><LifeBuoy size={18} /></button><button className="notification-button" aria-label="Notifications"><Bell size={18} /><i /></button><div className="topbar-divider" /><button className="top-profile" aria-label="Demo member profile"><span className="profile-avatar">DM</span><ChevronDown size={14} /></button></div>
   </header>
 }
 
@@ -69,7 +75,7 @@ const products = [
 // Dashboard composition keeps summary, chart, category, and product sections readable separately.
 function Dashboard() {
   return <div className="page-content">
-    <div className="page-heading"><div><div className="eyebrow">WEDNESDAY, OCTOBER 15, 2025</div><h1>Good morning, Jordan <span>✳</span></h1><p>Here’s what’s happening with your store today.</p></div><button className="primary-button"><Plus size={17} /> Add product</button></div>
+    <div className="page-heading"><div><div className="eyebrow">{new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(new Date()).toUpperCase()}</div><h1>Good morning, Demo member <span>✳</span></h1><p>Here’s what’s happening with your store today.</p></div><button className="primary-button"><Plus size={17} /> Add product</button></div>
     <div className="stats-grid">
       <StatCard label="Total products" value="248" change="12.8%" note="vs. last month" icon={ShoppingBag} positive />
       <StatCard label="Total categories" value="12" change="2 new" note="this month" icon={Tag} positive />
@@ -103,7 +109,7 @@ function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
   const title = location.pathname === '/' ? 'Overview' : location.pathname.slice(1).replace(/^./, char => char.toUpperCase())
-  return <div className="app-shell"><Sidebar collapsed={collapsed} onToggle={() => setCollapsed(value => !value)} mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)}/><main className="main-area"><Topbar title={title} onMenu={() => setMobileOpen(true)}/><Routes><Route path="/" element={<Dashboard/>}/><Route path="/products" element={<ProductsPage/>}/><Route path="/products/:productId" element={<ProductDetailsPage/>}/><Route path="/categories" element={<Placeholder title="Categories"/>}/><Route path="/settings" element={<Placeholder title="Settings"/>}/><Route path="*" element={<Placeholder title="Page not found"/>}/></Routes><footer className="app-footer"><span>© 2025 Stockroom Studio</span><span><a href="#">Privacy</a><a href="#">Help center</a><span className="footer-status"><i/> All systems operational</span></span></footer></main></div>
+  return <div className="app-shell"><Sidebar collapsed={collapsed} onToggle={() => setCollapsed(value => !value)} mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)}/><main className="main-area"><Topbar title={title} onMenu={() => setMobileOpen(true)}/><Routes><Route path="/" element={<Dashboard/>}/><Route path="/products" element={<ProductsPage/>}/><Route path="/products/:productId" element={<ProductDetailsPage/>}/><Route path="/users" element={<PermissionGate permission="viewUsers"><UsersPage/></PermissionGate>}/><Route path="/categories" element={<Placeholder title="Categories"/>}/><Route path="/settings" element={<Placeholder title="Settings"/>}/><Route path="*" element={<Placeholder title="Page not found"/>}/></Routes><footer className="app-footer"><span>© 2026 Stockroom Studio</span><span><a href="#">Privacy</a><a href="#">Help center</a><span className="footer-status"><i/> All systems operational</span></span></footer></main></div>
 }
 
 // BrowserRouter enables direct navigation to each dashboard section.

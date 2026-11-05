@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './index.css'
 import App from './App.tsx'
+import { DemoRoleProvider } from './features/users/RoleProvider'
 
 // A single client keeps server data cached across route changes during this session.
 const queryClient = new QueryClient({
@@ -11,8 +12,10 @@ const queryClient = new QueryClient({
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
+    <DemoRoleProvider>
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
+    </DemoRoleProvider>
   </StrictMode>,
 )

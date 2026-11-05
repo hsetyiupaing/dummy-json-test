@@ -1,0 +1,3 @@
+/* The global role selector is explicitly labeled as a demo permission preview. */
+.demo-role-switch{height:31px;display:flex;align-items:center;gap:5px;padding:0 7px;border:1px solid #e8ebe7;border-radius:6px;color:#8b938b;background:#fff;font-size:9px;white-space:nowrap}.demo-role-switch select{appearance:none;max-width:75px;border:0;outline:0;background:transparent;color:#607c64;font:inherit;font-weight:650;cursor:pointer}.demo-role-switch>svg{pointer-events:none;color:#8c948c}.permission-denied{margin:0 auto;max-width:520px;padding:35px 20px}
+@media(max-width:760px){.demo-role-switch{height:29px;padding-inline:5px;gap:3px;font-size:8px}.demo-role-switch>span{display:none}.demo-role-switch select{max-width:62px}.topbar-actions{gap:7px}}
