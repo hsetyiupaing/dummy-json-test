@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from 'react'
 import { isAxiosError } from 'axios'
-import { ArrowRight, Box, Eye, EyeOff, LockKeyhole, ShieldCheck, UserRound } from 'lucide-react'
+import { ArrowRight, Box, Eye, EyeOff, LockKeyhole, UserRound } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-import { login } from '../authService'
-import type { AuthenticatedUser } from '../types'
+import { useAuth } from '../useAuth'
+import { getDemoRole, getRoleLandingPath } from '../demoRoles'
 import './LoginPage.css'
 import './LoginPage.theme.css'
 
@@ -24,8 +24,8 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
-  const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(null)
   const navigate = useNavigate()
+  const { login } = useAuth()
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -33,16 +33,12 @@ export default function LoginPage() {
     setIsLoading(true)
     try {
       const user = await login({ username, password, remember })
-      setAuthenticatedUser(user)
+      navigate(getRoleLandingPath(getDemoRole(user)), { replace: true })
     } catch (error) {
       setErrorMessage(getLoginError(error))
     } finally {
       setIsLoading(false)
     }
-  }
-
-  if (authenticatedUser) {
-    return <main className="auth-screen"><section className="login-card login-success-card"><div className="auth-brand"><div className="auth-logo"><Box size={19}/></div><span>Stockroom <strong>Studio</strong></span></div><div className="success-mark"><ShieldCheck size={24}/></div><p className="login-eyebrow">AUTHENTICATED</p><h1>Welcome, {authenticatedUser.firstName}</h1><p className="login-description">DummyJSON authenticated this account. Application roles are managed separately from this profile.</p><div className="authenticated-profile"><img src={authenticatedUser.image} alt=""/><div><strong>{authenticatedUser.firstName} {authenticatedUser.lastName}</strong><span>{authenticatedUser.email}</span><span>@{authenticatedUser.username}</span></div></div><button className="login-submit" onClick={() => navigate('/')}>Continue to Stockroom Studio <ArrowRight size={16}/></button></section></main>
   }
 
   return <main className="auth-screen"><section className="login-card">

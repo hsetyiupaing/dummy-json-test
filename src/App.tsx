@@ -1,31 +1,34 @@
 import { useState } from 'react'
-import { BrowserRouter, NavLink, Route, Routes, useLocation } from 'react-router-dom'
+import { BrowserRouter, Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import {
   ArrowDownRight, ArrowUpRight, Bell, Box, ChevronDown, ChevronLeft,
   ChevronRight, CircleHelp, CreditCard, LayoutDashboard, LifeBuoy,
-  Menu, MoreHorizontal, Package, Plus, Search, Settings, ShoppingBag,
+  LogOut, Menu, MoreHorizontal, Package, Plus, Search, Settings, ShoppingBag,
   SlidersHorizontal, Sparkles, Tag, Users, X,
 } from 'lucide-react'
 import ProductsPage from './features/products/components/ProductsPage'
 import ProductDetailsPage from './features/products/components/ProductDetailsPage'
 import UsersPage from './features/users/components/UsersPage'
 import LoginPage from './features/auth/components/LoginPage'
-import { PermissionGate } from './features/users/rbac'
-import { useDemoRole } from './features/users/useDemoRole'
-import './features/users/rbac.css'
+import { AuthLanding, PublicOnly, RequireAuth } from './features/auth/guards'
+import { useAuth } from './features/auth/useAuth'
+import { useAuthorization } from './features/auth/useAuthorization'
+import './features/auth/session.css'
 
 // Keep route metadata in one list so sidebar links stay consistent as sections grow.
 const navigation = [
-  { label: 'Overview', path: '/', icon: LayoutDashboard },
-  { label: 'Products', path: '/products', icon: Package },
-  { label: 'Categories', path: '/categories', icon: Tag },
-  { label: 'Users & roles', path: '/users', icon: Users },
+  { label: 'Overview', path: '/admin/dashboard', icon: LayoutDashboard, adminOnly: false },
+  { label: 'Products', path: '/admin/products', icon: Package, adminOnly: false },
+  { label: 'Categories', path: '/admin/categories', icon: Tag, adminOnly: true },
+  { label: 'Users & roles', path: '/admin/users', icon: Users, adminOnly: true },
 ]
 
 // Sidebar owns only navigation presentation; the shell controls its collapsed and mobile states.
 function Sidebar({ collapsed, onToggle, mobileOpen, onClose }: {
   collapsed: boolean; onToggle: () => void; mobileOpen: boolean; onClose: () => void
 }) {
+  const { user } = useAuth()
+  const { appRole } = useAuthorization()
   return <>
     {mobileOpen && <button aria-label="Close navigation overlay" className="sidebar-overlay" onClick={onClose} />}
     <aside className={`sidebar ${collapsed ? 'sidebar-collapsed' : ''} ${mobileOpen ? 'sidebar-mobile-open' : ''}`}>
@@ -41,15 +44,15 @@ function Sidebar({ collapsed, onToggle, mobileOpen, onClose }: {
       </div>
       <div className="nav-section-label">WORKSPACE</div>
       <nav className="main-nav" aria-label="Main navigation">
-        {navigation.map(({ label, path, icon: Icon }) => <NavLink key={path} to={path} end={path === '/'} onClick={onClose} title={collapsed ? label : undefined} className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>
+        {navigation.filter(item => !item.adminOnly || appRole === 'ADMIN').map(({ label, path, icon: Icon }) => <NavLink key={path} to={path} end={path === '/admin/dashboard'} onClick={onClose} title={collapsed ? label : undefined} className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>
           <Icon size={18} strokeWidth={1.8} /><span>{label}</span>{label === 'Products' && !collapsed && <span className="nav-count">248</span>}
         </NavLink>)}
-        <NavLink to="/settings" onClick={onClose} title={collapsed ? 'Settings' : undefined} className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}><Settings size={18} strokeWidth={1.8} /><span>Settings</span></NavLink>
+        {appRole === 'ADMIN' && <NavLink to="/admin/settings" onClick={onClose} title={collapsed ? 'Settings' : undefined} className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}><Settings size={18} strokeWidth={1.8} /><span>Settings</span></NavLink>}
       </nav>
       <div className="sidebar-bottom">
         {!collapsed && <div className="plan-card"><div className="plan-icon"><Sparkles size={15} /></div><strong>Free plan</strong><span>Unlock more with a Pro plan.</span><button>Explore plans <ArrowUpRight size={13} /></button><div className="plan-progress"><i /></div><small>2 of 5 team members</small></div>}
         <button className="nav-link support-link" title={collapsed ? 'Help & support' : undefined}><CircleHelp size={18} /><span>Help & support</span></button>
-        <div className="profile-row"><div className="profile-avatar">DM</div>{!collapsed && <><div className="profile-copy"><strong>Demo member</strong><span>Role preview only</span></div><MoreHorizontal size={18} /></>}</div>
+        <div className="profile-row"><div className="profile-avatar">{user?.image ? <img src={user.image} alt=""/> : `${user?.firstName[0] ?? ''}${user?.lastName[0] ?? ''}`}</div>{!collapsed && <div className="profile-copy"><strong>{user ? `${user.firstName} ${user.lastName}` : 'Signed out'}</strong><span>{user?.email ?? 'No active session'}</span></div>}</div>
       </div>
     </aside>
   </>
@@ -57,11 +60,12 @@ function Sidebar({ collapsed, onToggle, mobileOpen, onClose }: {
 
 // The top bar receives its current route title so it remains independent of route definitions.
 function Topbar({ title, onMenu }: { title: string; onMenu: () => void }) {
-  const { role, setRole } = useDemoRole()
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
   return <header className="topbar">
     <button className="icon-button mobile-menu" aria-label="Open navigation" onClick={onMenu}><Menu size={20} /></button>
     <div className="breadcrumbs"><span>Workspace</span><ChevronRight size={14} /><strong>{title}</strong></div>
-    <div className="topbar-actions"><label className="demo-role-switch"><span>Demo access</span><select aria-label="Choose demo role" value={role} onChange={event => setRole(event.target.value as 'admin' | 'moderator' | 'user')}><option value="admin">Admin</option><option value="moderator">Moderator</option><option value="user">User</option></select><ChevronDown size={12}/></label><button className="search-shortcut"><Search size={15} /><span>Search anything...</span><kbd>⌘ K</kbd></button><button className="icon-button top-help" aria-label="Help"><LifeBuoy size={18} /></button><button className="notification-button" aria-label="Notifications"><Bell size={18} /><i /></button><div className="topbar-divider" /><button className="top-profile" aria-label="Demo member profile"><span className="profile-avatar">DM</span><ChevronDown size={14} /></button></div>
+    <div className="topbar-actions"><button className="search-shortcut"><Search size={15} /><span>Search anything...</span><kbd>⌘ K</kbd></button><button className="icon-button top-help" aria-label="Help"><LifeBuoy size={18} /></button><button className="notification-button" aria-label="Notifications"><Bell size={18} /><i /></button><div className="topbar-divider" /><div className="top-profile"><span className="profile-avatar">{user?.image ? <img src={user.image} alt=""/> : `${user?.firstName[0] ?? ''}${user?.lastName[0] ?? ''}`}</span><span className="top-profile-name">{user ? `${user.firstName} ${user.lastName}` : ''}</span><button className="icon-button logout-button" aria-label="Sign out" title="Sign out" onClick={() => { logout(); navigate('/login', { replace: true }) }}><LogOut size={16}/></button></div></div>
   </header>
 }
 
@@ -75,8 +79,9 @@ const products = [
 
 // Dashboard composition keeps summary, chart, category, and product sections readable separately.
 function Dashboard() {
+  const { user } = useAuth()
   return <div className="page-content">
-    <div className="page-heading"><div><div className="eyebrow">{new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(new Date()).toUpperCase()}</div><h1>Good morning, Demo member <span>✳</span></h1><p>Here’s what’s happening with your store today.</p></div><button className="primary-button"><Plus size={17} /> Add product</button></div>
+    <div className="page-heading"><div><div className="eyebrow">{new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(new Date()).toUpperCase()}</div><h1>Good morning, {user?.firstName ?? 'there'} <span>✳</span></h1><p>Here’s what’s happening with your store today.</p></div><button className="primary-button"><Plus size={17} /> Add product</button></div>
     <div className="stats-grid">
       <StatCard label="Total products" value="248" change="12.8%" note="vs. last month" icon={ShoppingBag} positive />
       <StatCard label="Total categories" value="12" change="2 new" note="this month" icon={Tag} positive />
@@ -109,9 +114,25 @@ function AppShell() {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
-  const title = location.pathname === '/' ? 'Overview' : location.pathname.slice(1).replace(/^./, char => char.toUpperCase())
-  return <div className="app-shell"><Sidebar collapsed={collapsed} onToggle={() => setCollapsed(value => !value)} mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)}/><main className="main-area"><Topbar title={title} onMenu={() => setMobileOpen(true)}/><Routes><Route path="/" element={<Dashboard/>}/><Route path="/dashboard" element={<Dashboard/>}/><Route path="/products" element={<ProductsPage/>}/><Route path="/products/:productId" element={<ProductDetailsPage/>}/><Route path="/users" element={<PermissionGate permission="viewUsers"><UsersPage/></PermissionGate>}/><Route path="/categories" element={<Placeholder title="Categories"/>}/><Route path="/settings" element={<Placeholder title="Settings"/>}/><Route path="*" element={<Placeholder title="Page not found"/>}/></Routes><footer className="app-footer"><span>© 2026 Stockroom Studio</span><span><a href="#">Privacy</a><a href="#">Help center</a><span className="footer-status"><i/> All systems operational</span></span></footer></main></div>
+  const section = location.pathname.split('/')[2]
+  const title = section === 'dashboard' ? 'Overview' : section ? section.replace(/^./, char => char.toUpperCase()) : 'Overview'
+  return <div className="app-shell"><Sidebar collapsed={collapsed} onToggle={() => setCollapsed(value => !value)} mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)}/><main className="main-area"><Topbar title={title} onMenu={() => setMobileOpen(true)}/><Routes><Route path="/admin/dashboard" element={<Dashboard/>}/><Route path="/admin/products" element={<ProductsPage/>}/><Route path="/admin/products/:productId" element={<ProductDetailsPage/>}/><Route path="/admin/users" element={<RequireAuth roles={['ADMIN']}><UsersPage/></RequireAuth>}/><Route path="/admin/categories" element={<RequireAuth roles={['ADMIN']}><Placeholder title="Categories"/></RequireAuth>}/><Route path="/admin/settings" element={<RequireAuth roles={['ADMIN']}><Placeholder title="Settings"/></RequireAuth>}/><Route path="*" element={<Placeholder title="Page not found"/>}/></Routes><footer className="app-footer"><span>© 2026 Stockroom Studio</span><span><a href="#">Privacy</a><a href="#">Help center</a><span className="footer-status"><i/> All systems operational</span></span></footer></main></div>
 }
 
-// BrowserRouter enables direct navigation to each dashboard section.
-export default function App() { return <BrowserRouter><Routes><Route path="/login" element={<LoginPage/>}/><Route path="/*" element={<AppShell/>}/></Routes></BrowserRouter> }
+// The storefront gets its own route boundary now; its distinct layout follows in Phase C.
+function StorefrontPlaceholder() {
+  const { appRole } = useAuthorization()
+  return <main className="auth-screen"><section className="login-card"><div className="auth-brand"><div className="auth-logo"><Box size={19}/></div><span>Stockroom <strong>Studio</strong></span></div><div className="login-heading"><p className="login-eyebrow">CUSTOMER STORE</p><h1>Storefront coming next</h1><p className="login-description">You are signed in. The customer shopping experience is introduced in the storefront phase.</p></div>{appRole !== 'USER' && <Link to="/admin/dashboard" className="login-submit">Continue to management <ArrowUpRight size={15}/></Link>}</section></main>
+}
+
+// BrowserRouter routes public login, protected admin, and authenticated storefront destinations.
+export default function App() {
+  return <BrowserRouter><Routes>
+    <Route path="/login" element={<PublicOnly><LoginPage/></PublicOnly>}/>
+    <Route path="/admin" element={<RequireAuth roles={['ADMIN', 'MODERATOR']}><Navigate to="/admin/dashboard" replace/></RequireAuth>}/>
+    <Route path="/admin/*" element={<RequireAuth roles={['ADMIN', 'MODERATOR']}><AppShell/></RequireAuth>}/>
+    <Route path="/shop/*" element={<RequireAuth><StorefrontPlaceholder/></RequireAuth>}/>
+    <Route path="/" element={<AuthLanding/>}/>
+    <Route path="*" element={<AuthLanding/>}/>
+  </Routes></BrowserRouter>
+}

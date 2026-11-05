@@ -1,0 +1,7 @@
+/* Authenticated profile details replace the former fictional demo identity. */
+.top-profile{display:flex;align-items:center;gap:8px;min-width:0;color:#737c73}
+.top-profile-name{max-width:132px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;color:#616a61}
+.profile-avatar img{width:100%;height:100%;display:block;object-fit:cover;border-radius:inherit}
+.logout-button{width:29px;height:29px;flex:none}
+.auth-loading{min-height:100vh;display:flex;align-items:center;justify-content:center;gap:10px;background:#f7f8f6;color:#657265;font-size:12px}
+@media(max-width:760px){.top-profile-name{display:none}.top-profile{gap:4px}.logout-button{width:27px;height:27px}}

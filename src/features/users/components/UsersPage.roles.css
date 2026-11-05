@@ -1,0 +1,2 @@
+/* Distinguish the app's local authorization assignment from DummyJSON's seed role. */
+.app-role-badge{border:1px solid transparent}.app-role-admin{background:#edf4ee;color:#4f7957}.app-role-moderator{background:#f7f2e6;color:#947949}.app-role-user{background:#eff1f2;color:#717b84}
