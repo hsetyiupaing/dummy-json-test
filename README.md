@@ -25,6 +25,7 @@ The development server prints the local URL. Use `npm run build` to run the Type
 - Product requests and category metadata use TanStack Query caches. The catalogue fetches the full result set so local filters and sorting apply consistently across pages.
 - Typed Axios client and service functions cover product listing, details, search, categories, category filtering, create, update, and delete.
 - Dashboard figures and recent product rows remain presentation placeholders until the dashboard data phase.
+- Phase A adds an email-first DummyJSON login screen with loading/error states and a success profile sourced from the authentication response. Central session persistence and route protection are scheduled for Phase B.
 
 ## Architecture
 
@@ -51,6 +52,8 @@ API requests live in service functions, so React components and query hooks can 
 ## DummyJSON behavior
 
 The API base URL is `https://dummyjson.com`. Product write endpoints simulate create, update, and delete operations; the server does not persist those changes. The client must therefore apply mutation results to its TanStack Query cache so changes remain visible during the current session. A page refresh reloads the server's original data.
+
+DummyJSON login accepts a username and password. The login screen asks for email, resolves the exact email to its DummyJSON username, then sends the username and password to `POST /auth/login`. The demo account shown on the login page is from DummyJSON's auth documentation. Login currently demonstrates the API response; session context, persistence, and protected-route redirects follow in Phase B.
 
 The users page uses DummyJSON's seeded `admin`, `moderator`, and `user` roles. It requests only `id`, `firstName`, `lastName`, `email`, `username`, `image`, and `role`, avoiding unrelated sensitive profile and payment fields. The role switcher is a local demonstration control; it does not sign in as a directory user, update API records, or provide server-side authorization. User-directory roles and simulated product changes return to server seed data after a refresh.
 

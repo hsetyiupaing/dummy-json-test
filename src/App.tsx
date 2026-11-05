@@ -9,6 +9,7 @@ import {
 import ProductsPage from './features/products/components/ProductsPage'
 import ProductDetailsPage from './features/products/components/ProductDetailsPage'
 import UsersPage from './features/users/components/UsersPage'
+import LoginPage from './features/auth/components/LoginPage'
 import { PermissionGate } from './features/users/rbac'
 import { useDemoRole } from './features/users/useDemoRole'
 import './features/users/rbac.css'
@@ -109,8 +110,8 @@ function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
   const title = location.pathname === '/' ? 'Overview' : location.pathname.slice(1).replace(/^./, char => char.toUpperCase())
-  return <div className="app-shell"><Sidebar collapsed={collapsed} onToggle={() => setCollapsed(value => !value)} mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)}/><main className="main-area"><Topbar title={title} onMenu={() => setMobileOpen(true)}/><Routes><Route path="/" element={<Dashboard/>}/><Route path="/products" element={<ProductsPage/>}/><Route path="/products/:productId" element={<ProductDetailsPage/>}/><Route path="/users" element={<PermissionGate permission="viewUsers"><UsersPage/></PermissionGate>}/><Route path="/categories" element={<Placeholder title="Categories"/>}/><Route path="/settings" element={<Placeholder title="Settings"/>}/><Route path="*" element={<Placeholder title="Page not found"/>}/></Routes><footer className="app-footer"><span>© 2026 Stockroom Studio</span><span><a href="#">Privacy</a><a href="#">Help center</a><span className="footer-status"><i/> All systems operational</span></span></footer></main></div>
+  return <div className="app-shell"><Sidebar collapsed={collapsed} onToggle={() => setCollapsed(value => !value)} mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)}/><main className="main-area"><Topbar title={title} onMenu={() => setMobileOpen(true)}/><Routes><Route path="/" element={<Dashboard/>}/><Route path="/dashboard" element={<Dashboard/>}/><Route path="/products" element={<ProductsPage/>}/><Route path="/products/:productId" element={<ProductDetailsPage/>}/><Route path="/users" element={<PermissionGate permission="viewUsers"><UsersPage/></PermissionGate>}/><Route path="/categories" element={<Placeholder title="Categories"/>}/><Route path="/settings" element={<Placeholder title="Settings"/>}/><Route path="*" element={<Placeholder title="Page not found"/>}/></Routes><footer className="app-footer"><span>© 2026 Stockroom Studio</span><span><a href="#">Privacy</a><a href="#">Help center</a><span className="footer-status"><i/> All systems operational</span></span></footer></main></div>
 }
 
 // BrowserRouter enables direct navigation to each dashboard section.
-export default function App() { return <BrowserRouter><AppShell/></BrowserRouter> }
+export default function App() { return <BrowserRouter><Routes><Route path="/login" element={<LoginPage/>}/><Route path="/*" element={<AppShell/>}/></Routes></BrowserRouter> }
