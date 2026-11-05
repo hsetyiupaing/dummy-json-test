@@ -160,7 +160,7 @@ function ProductRow({ product, admin, onDelete, deleting }: { product: Product; 
     <td className="price-cell">{formatPrice(product.price)}</td><td><span className={product.stock <= 10 ? 'stock-warning' : ''}>{product.stock}</span></td>
     <td><span className="rating-cell"><span>★</span> {product.rating.toFixed(1)}</span></td>
     <td><span className={`status status-${availability.toLowerCase().replaceAll(' ', '-')}`}><i/>{availability}</span></td>
-    <td><Link className="product-id-link" to={`/admin/products/${product.id}`}>#{product.id}</Link></td>{admin && <td><div className="product-row-actions"><Link to={`/admin/products/${product.id}/edit`}>Edit</Link><button type="button" disabled={deleting} onClick={onDelete}>{deleting ? 'Deleting…' : 'Delete'}</button></div></td>}
+    <td><Link className="product-id-link" to={`/admin/products/${product.id}`}>#{product.id}</Link></td>{admin && <td><div className="product-row-actions"><Link to={`/admin/products/${product.id}`}>View</Link><Link to={`/admin/products/${product.id}/edit`}>Edit</Link><button type="button" disabled={deleting} onClick={onDelete}>{deleting ? 'Deleting…' : 'Delete'}</button></div></td>}
   </tr>
 }
 
