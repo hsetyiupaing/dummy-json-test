@@ -17,8 +17,9 @@ The development server prints the local URL. Use `npm run build` to run the Type
 
 - Responsive dashboard shell with desktop sidebar collapse and mobile navigation.
 - Overview page with summary cards, a revenue trend visualization, category distribution, and recently added product table.
-- Routes are in place for Overview, Products, Categories, and Settings. Categories, Settings, and product details are still phase placeholders.
+- Routes are in place for Overview, Products, Categories, and Settings. Product details are API-backed; Categories and Settings are still phase placeholders.
 - The Products page loads and searches DummyJSON data, with category, stock availability, and price filters; sortable columns and page sizes of 10, 20, or 30.
+- Product detail pages support direct links, a selectable image gallery, product specifications, pricing, stock, rating, and loading/error/not-found states.
 - Product requests and category metadata use TanStack Query caches. The catalogue fetches the full result set so local filters and sorting apply consistently across pages.
 - Typed Axios client and service functions cover product listing, details, search, categories, category filtering, create, update, and delete.
 - Dashboard figures and recent product rows remain presentation placeholders until the dashboard data phase.
@@ -60,4 +61,4 @@ The service layer exposes:
 
 ## Development phases
 
-The implementation follows the incremental phases in the original project brief. Completed phases are the initial project setup, dashboard layout and routing, typed Axios API services, and the product listing with search, filters, sorting, and pagination. The next phase builds the product details page.
+The implementation follows the incremental phases in the original project brief. Completed phases are the initial project setup, dashboard layout and routing, typed Axios API services, the product listing with search, filters, sorting, and pagination, and product details. The next phase adds the reusable create/edit product form.
