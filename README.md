@@ -1,75 +1,61 @@
-# React + TypeScript + Vite
+# Stockroom Studio
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Stockroom Studio is a responsive product management dashboard built with React 19, TypeScript, Vite, and Tailwind CSS. It uses DummyJSON as its product API and is structured to keep API access, feature code, and the shared application shell separate.
 
-Currently, two official plugins are available:
+## Getting started
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Requirements: Node.js 20.19+ or 22.12+ and npm.
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+The development server prints the local URL. Use `npm run build` to run the TypeScript project checks and create a production bundle. Use `npm run lint` to run ESLint.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Current implementation
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- Responsive dashboard shell with desktop sidebar collapse and mobile navigation.
+- Overview page with summary cards, a revenue trend visualization, category distribution, and recently added product table.
+- Routes are in place for Overview, Products, Categories, and Settings. Products, Categories, and Settings are currently phase placeholders.
+- Typed Axios client and service functions cover product listing, details, search, categories, category filtering, create, update, and delete.
+- Dashboard figures and table rows are presentation placeholders until the product listing and dashboard data phases connect the API.
 
+## Architecture
+
+```text
+src/
+├── components/                 # Shared UI and layout components as the app grows
+├── features/
+│   └── products/
+│       ├── services/            # DummyJSON product requests
+│       └── types/               # Shared product and category models
+├── lib/
+│   └── api.ts                   # Shared Axios instance
+├── App.tsx                      # Router, dashboard shell, and current overview
+├── index.css                    # Tailwind import, design tokens, and responsive styles
+└── main.tsx                     # React entry point
 ```
+
+API requests live in service functions, so React components and query hooks can reuse the same typed operations. TanStack Query will own request lifecycle and cache synchronization as the CRUD screens are introduced.
+
+## DummyJSON behavior
+
+The API base URL is `https://dummyjson.com`. Product write endpoints simulate create, update, and delete operations; the server does not persist those changes. The client must therefore apply mutation results to its TanStack Query cache so changes remain visible during the current session. A page refresh reloads the server's original data.
+
+The service layer exposes:
+
+| Operation | Endpoint |
+| --- | --- |
+| List products | `GET /products` |
+| Product details | `GET /products/:id` |
+| Search products | `GET /products/search?q=` |
+| Categories | `GET /products/categories` |
+| Products by category | `GET /products/category/:category` |
+| Create product | `POST /products/add` |
+| Update product | `PATCH /products/:id` |
+| Delete product | `DELETE /products/:id` |
+
+## Development phases
+
+The implementation follows the incremental phases in the original project brief. Completed phases are the initial project setup, dashboard layout and routing, and the typed Axios API service layer. The next phase connects product queries to the product listing, search, filters, sorting, and pagination.
