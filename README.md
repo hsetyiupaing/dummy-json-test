@@ -17,9 +17,11 @@ The development server prints the local URL. Use `npm run build` to run the Type
 
 - Responsive dashboard shell with desktop sidebar collapse and mobile navigation.
 - Overview page with summary cards, a revenue trend visualization, category distribution, and recently added product table.
-- Routes are in place for Overview, Products, Categories, and Settings. Products, Categories, and Settings are currently phase placeholders.
+- Routes are in place for Overview, Products, Categories, and Settings. Categories, Settings, and product details are still phase placeholders.
+- The Products page loads and searches DummyJSON data, with category, stock availability, and price filters; sortable columns and page sizes of 10, 20, or 30.
+- Product requests and category metadata use TanStack Query caches. The catalogue fetches the full result set so local filters and sorting apply consistently across pages.
 - Typed Axios client and service functions cover product listing, details, search, categories, category filtering, create, update, and delete.
-- Dashboard figures and table rows are presentation placeholders until the product listing and dashboard data phases connect the API.
+- Dashboard figures and recent product rows remain presentation placeholders until the dashboard data phase.
 
 ## Architecture
 
@@ -58,4 +60,4 @@ The service layer exposes:
 
 ## Development phases
 
-The implementation follows the incremental phases in the original project brief. Completed phases are the initial project setup, dashboard layout and routing, and the typed Axios API service layer. The next phase connects product queries to the product listing, search, filters, sorting, and pagination.
+The implementation follows the incremental phases in the original project brief. Completed phases are the initial project setup, dashboard layout and routing, typed Axios API services, and the product listing with search, filters, sorting, and pagination. The next phase builds the product details page.

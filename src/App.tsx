@@ -6,6 +6,7 @@ import {
   Menu, MoreHorizontal, Package, Plus, Search, Settings, ShoppingBag,
   SlidersHorizontal, Sparkles, Tag, Users, X,
 } from 'lucide-react'
+import ProductsPage from './features/products/components/ProductsPage'
 
 // Keep route metadata in one list so sidebar links stay consistent as sections grow.
 const navigation = [
@@ -101,7 +102,7 @@ function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
   const title = location.pathname === '/' ? 'Overview' : location.pathname.slice(1).replace(/^./, char => char.toUpperCase())
-  return <div className="app-shell"><Sidebar collapsed={collapsed} onToggle={() => setCollapsed(value => !value)} mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)}/><main className="main-area"><Topbar title={title} onMenu={() => setMobileOpen(true)}/><Routes><Route path="/" element={<Dashboard/>}/><Route path="/products" element={<Placeholder title="Products"/>}/><Route path="/categories" element={<Placeholder title="Categories"/>}/><Route path="/settings" element={<Placeholder title="Settings"/>}/><Route path="*" element={<Placeholder title="Page not found"/>}/></Routes><footer className="app-footer"><span>© 2025 Stockroom Studio</span><span><a href="#">Privacy</a><a href="#">Help center</a><span className="footer-status"><i/> All systems operational</span></span></footer></main></div>
+  return <div className="app-shell"><Sidebar collapsed={collapsed} onToggle={() => setCollapsed(value => !value)} mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)}/><main className="main-area"><Topbar title={title} onMenu={() => setMobileOpen(true)}/><Routes><Route path="/" element={<Dashboard/>}/><Route path="/products" element={<ProductsPage/>}/><Route path="/products/:productId" element={<Placeholder title="Product details"/>}/><Route path="/categories" element={<Placeholder title="Categories"/>}/><Route path="/settings" element={<Placeholder title="Settings"/>}/><Route path="*" element={<Placeholder title="Page not found"/>}/></Routes><footer className="app-footer"><span>© 2025 Stockroom Studio</span><span><a href="#">Privacy</a><a href="#">Help center</a><span className="footer-status"><i/> All systems operational</span></span></footer></main></div>
 }
 
 // BrowserRouter enables direct navigation to each dashboard section.
