@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { isAxiosError } from 'axios'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { toast } from 'sonner'
 import { ArrowLeft, ArrowUpRight, Box, Check, CircleAlert, ImageOff, Package, Pencil, ShieldCheck, Star, Trash2, Truck } from 'lucide-react'
-import { useProduct } from '../hooks/useProducts'
+import { useProduct, useProductMutations } from '../hooks/useProducts'
+import { useAuthorization } from '../../auth/useAuthorization'
 import './ProductDetailsPage.css'
 
 /** Format product prices in the store's currency presentation. */
@@ -15,6 +17,9 @@ export default function ProductDetailsPage() {
   const { productId } = useParams()
   const id = Number(productId)
   const productQuery = useProduct(id)
+  const mutations = useProductMutations()
+  const { appRole } = useAuthorization()
+  const navigate = useNavigate()
   const [selectedImage, setSelectedImage] = useState(0)
   const product = productQuery.data
   const galleryImages = product ? [...new Set([product.thumbnail, ...product.images].filter(Boolean))] : []
@@ -29,12 +34,19 @@ export default function ProductDetailsPage() {
   }
   if (!product) return <DetailState title="Product not found" message="No product data was returned for this address."/>
 
-  const availabilityClass = product.availabilityStatus.toLowerCase().replaceAll(' ', '-')
+  const productData = product
+  const availabilityClass = productData.availabilityStatus.toLowerCase().replaceAll(' ', '-')
   const mainImage = galleryImages[selectedImage]
+  async function removeProduct() {
+    if (appRole !== 'ADMIN') { toast.error('Administrator access is required.'); return }
+    if (!window.confirm(`Delete “${productData.title}” from this session's catalog?`)) return
+    try { await mutations.remove.mutateAsync(id); toast.success(`${productData.title} was removed from this session.`); navigate('/admin/products', { replace: true }) }
+    catch { toast.error(`Could not delete ${productData.title}.`) }
+  }
 
   return <div className="page-content detail-page">
-    <Link className="back-link" to="/products"><ArrowLeft size={15}/> Back to products</Link>
-    <div className="detail-heading"><div><div className="eyebrow">PRODUCT CATALOG / #{product.id}</div><h1>{product.title}</h1><p>Product details and inventory information.</p></div><div className="detail-actions"><button className="secondary-button detail-action" disabled title="Product editing is added in the upcoming update phase"><Pencil size={14}/> Edit product</button><button className="danger-button detail-action" disabled title="Product deletion is added in the upcoming delete phase"><Trash2 size={14}/> Delete</button></div></div>
+    <Link className="back-link" to="/admin/products"><ArrowLeft size={15}/> Back to products</Link>
+    <div className="detail-heading"><div><div className="eyebrow">PRODUCT CATALOG / #{product.id}</div><h1>{product.title}</h1><p>Product details and inventory information.</p></div>{appRole === 'ADMIN' && <div className="detail-actions"><Link className="secondary-button detail-action" to={`/admin/products/${product.id}/edit`}><Pencil size={14}/> Edit product</Link><button className="danger-button detail-action" disabled={mutations.remove.isPending} onClick={() => void removeProduct()}><Trash2 size={14}/> {mutations.remove.isPending ? 'Deleting…' : 'Delete'}</button></div>}</div>
 
     <div className="detail-grid">
       <section className="detail-card gallery-card" aria-label="Product image gallery">
@@ -57,7 +69,7 @@ export default function ProductDetailsPage() {
 
     <div className="detail-lower-grid">
       <section className="detail-card additional-card"><div className="detail-section-heading"><div><h2>Product information</h2><p>Specifications and policies</p></div><Package size={17}/></div><div className="spec-list"><DetailAttribute label="Weight" value={product.weight ? `${product.weight} g` : 'Not specified'}/><DetailAttribute label="Dimensions" value={product.dimensions ? `${product.dimensions.width} × ${product.dimensions.height} × ${product.dimensions.depth} cm` : 'Not specified'}/><DetailAttribute label="Warranty" value={product.warrantyInformation || 'Not specified'}/><DetailAttribute label="Return policy" value={product.returnPolicy || 'Not specified'}/><DetailAttribute label="Shipping" value={product.shippingInformation || 'Not specified'}/></div></section>
-      <section className="detail-card quick-facts"><div className="detail-section-heading"><div><h2>Inventory notes</h2><p>Fulfillment at a glance</p></div><Truck size={17}/></div><div className="fact-row"><div className="fact-icon"><Truck size={15}/></div><div><strong>{product.shippingInformation || 'Standard shipping'}</strong><span>Shipping</span></div><Check size={15} className="fact-check"/></div><div className="fact-row"><div className="fact-icon"><ShieldCheck size={15}/></div><div><strong>{product.warrantyInformation || 'No warranty details'}</strong><span>Warranty coverage</span></div><Check size={15} className="fact-check"/></div><Link className="catalog-link" to="/products">View all products <ArrowUpRight size={14}/></Link></section>
+      <section className="detail-card quick-facts"><div className="detail-section-heading"><div><h2>Inventory notes</h2><p>Fulfillment at a glance</p></div><Truck size={17}/></div><div className="fact-row"><div className="fact-icon"><Truck size={15}/></div><div><strong>{product.shippingInformation || 'Standard shipping'}</strong><span>Shipping</span></div><Check size={15} className="fact-check"/></div><div className="fact-row"><div className="fact-icon"><ShieldCheck size={15}/></div><div><strong>{product.warrantyInformation || 'No warranty details'}</strong><span>Warranty coverage</span></div><Check size={15} className="fact-check"/></div><Link className="catalog-link" to="/admin/products">View all products <ArrowUpRight size={14}/></Link></section>
     </div>
   </div>
 }
@@ -69,7 +81,7 @@ function DetailAttribute({ label, value }: { label: string; value: string }) {
 
 /** Give invalid, missing, and failed product requests the same clear recovery layout. */
 function DetailState({ title, message, retry }: { title: string; message: string; retry?: () => void }) {
-  return <div className="page-content detail-page"><Link className="back-link" to="/products"><ArrowLeft size={15}/> Back to products</Link><div className="detail-state"><CircleAlert size={26}/><h1>{title}</h1><p>{message}</p>{retry && <button className="secondary-button" onClick={retry}>Try again</button>}</div></div>
+  return <div className="page-content detail-page"><Link className="back-link" to="/admin/products"><ArrowLeft size={15}/> Back to products</Link><div className="detail-state"><CircleAlert size={26}/><h1>{title}</h1><p>{message}</p>{retry && <button className="secondary-button" onClick={retry}>Try again</button>}</div></div>
 }
 
 /** Preserve page structure while the detail request is loading. */

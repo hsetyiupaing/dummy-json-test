@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
+import { toast } from 'sonner'
 import {
   ArrowDown, ArrowDownUp, ArrowUp, ChevronDown, ChevronLeft, ChevronRight,
   CircleAlert, ListFilter, Package, Plus, RotateCcw, Search, X,
 } from 'lucide-react'
-import { useProductCategories, useProducts } from '../hooks/useProducts'
+import { useProductCategories, useProductMutations, useProducts } from '../hooks/useProducts'
+import { useAuthorization } from '../../auth/useAuthorization'
 import type { Product, ProductAvailabilityStatus } from '../types/product'
 import './ProductsPage.css'
 
@@ -38,6 +40,8 @@ export default function ProductsPage() {
   const [page, setPage] = useState(1)
   const productsQuery = useProducts(searchTerm)
   const categoriesQuery = useProductCategories()
+  const { appRole } = useAuthorization()
+  const mutations = useProductMutations()
 
   // Debouncing avoids sending a request for every keystroke while keeping the input responsive.
   useEffect(() => {
@@ -93,10 +97,17 @@ export default function ProductsPage() {
     else { setSortKey(key); setSortDirection(key === 'title' ? 'asc' : 'desc') }
   }
 
+  async function removeProduct(product: Product) {
+    if (appRole !== 'ADMIN') { toast.error('Administrator access is required.'); return }
+    if (!window.confirm(`Delete “${product.title}” from this session's catalog?`)) return
+    try { await mutations.remove.mutateAsync(product.id); toast.success(`${product.title} was removed from this session.`) }
+    catch { toast.error(`Could not delete ${product.title}.`) }
+  }
+
   return <div className="page-content products-page">
     <div className="page-heading">
       <div><div className="eyebrow">CATALOG</div><h1>Products</h1><p>Manage and organize your product catalog.</p></div>
-      <button className="primary-button" disabled><Plus size={17} /> Add product</button>
+      {appRole === 'ADMIN' && <Link className="primary-button" to="/admin/products/create"><Plus size={17} /> Add product</Link>}
     </div>
 
     <section className="catalog-panel panel" aria-label="Product catalog">
@@ -121,8 +132,8 @@ export default function ProductsPage() {
           <th>CATEGORY</th><th>BRAND</th>
           <th><SortButton label="PRICE" sortKey="price" activeKey={sortKey} direction={sortDirection} onClick={toggleSort}/></th>
           <th><SortButton label="STOCK" sortKey="stock" activeKey={sortKey} direction={sortDirection} onClick={toggleSort}/></th>
-          <th><SortButton label="RATING" sortKey="rating" activeKey={sortKey} direction={sortDirection} onClick={toggleSort}/></th><th>STATUS</th><th>ID</th>
-        </tr></thead><tbody>{visibleProducts.map(product => <ProductRow product={product} key={product.id}/>)}</tbody></table></div>
+          <th><SortButton label="RATING" sortKey="rating" activeKey={sortKey} direction={sortDirection} onClick={toggleSort}/></th><th>STATUS</th><th>ID</th>{appRole === 'ADMIN' && <th>ACTIONS</th>}
+        </tr></thead><tbody>{visibleProducts.map(product => <ProductRow product={product} key={product.id} admin={appRole === 'ADMIN'} onDelete={() => void removeProduct(product)} deleting={mutations.remove.isPending && mutations.remove.variables === product.id}/>)}</tbody></table></div>
         <div className="catalog-footer"><div className="page-size-control"><span>Rows per page</span><label><select value={pageSize} onChange={event => { setPageSize(Number(event.target.value)); setPage(1) }} aria-label="Rows per page">{pageSizeOptions.map(size => <option key={size} value={size}>{size}</option>)}</select><ChevronDown size={12}/></label></div><span className="catalog-count">Showing <strong>{(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, sortedProducts.length)}</strong> of <strong>{sortedProducts.length}</strong> products</span><div className="pagination"><span>Page {currentPage} of {pageCount}</span><button className="icon-button" aria-label="Previous page" disabled={currentPage === 1} onClick={() => setPage(value => Math.max(1, value - 1))}><ChevronLeft size={16}/></button><button className="icon-button" aria-label="Next page" disabled={currentPage >= pageCount} onClick={() => setPage(value => Math.min(pageCount, value + 1))}><ChevronRight size={16}/></button></div></div>
       </>}
     </section>
@@ -140,16 +151,16 @@ function SortButton({ label, sortKey, activeKey, direction, onClick }: {
 }
 
 /** Product rows keep images resilient and show an accessible visual stock state. */
-function ProductRow({ product }: { product: Product }) {
+function ProductRow({ product, admin, onDelete, deleting }: { product: Product; admin: boolean; onDelete: () => void; deleting: boolean }) {
   const availability = getAvailability(product)
   const image = product.thumbnail || product.images[0]
   return <tr>
-    <td><div className="product-name-cell"><div className="catalog-thumb"><img src={image} alt="" onError={event => { event.currentTarget.style.display = 'none' }}/><Package size={16}/></div><div><strong>{product.title}</strong><span>{product.sku || 'SKU unavailable'}</span></div></div></td>
+    <td><Link to={`/admin/products/${product.id}`} className="product-name-cell product-name-link"><div className="catalog-thumb"><img src={image} alt="" onError={event => { event.currentTarget.style.display = 'none' }}/><Package size={16}/></div><div><strong>{product.title}</strong><span>{product.sku || 'SKU unavailable'}</span></div></Link></td>
     <td><span className="category-chip">{product.category.replaceAll('-', ' ')}</span></td><td>{product.brand || <span className="muted-value">—</span>}</td>
     <td className="price-cell">{formatPrice(product.price)}</td><td><span className={product.stock <= 10 ? 'stock-warning' : ''}>{product.stock}</span></td>
     <td><span className="rating-cell"><span>★</span> {product.rating.toFixed(1)}</span></td>
     <td><span className={`status status-${availability.toLowerCase().replaceAll(' ', '-')}`}><i/>{availability}</span></td>
-    <td><Link className="product-id-link" to={`/products/${product.id}`}>#{product.id}</Link></td>
+    <td><Link className="product-id-link" to={`/admin/products/${product.id}`}>#{product.id}</Link></td>{admin && <td><div className="product-row-actions"><Link to={`/admin/products/${product.id}/edit`}>Edit</Link><button type="button" disabled={deleting} onClick={onDelete}>{deleting ? 'Deleting…' : 'Delete'}</button></div></td>}
   </tr>
 }
 
