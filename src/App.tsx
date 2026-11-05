@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { BrowserRouter, Link, NavLink, Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import {
-  ArrowDownRight, ArrowUpRight, Bell, Box, ChevronLeft,
+  ArrowUpRight, Bell, Box, ChevronLeft,
   ChevronRight, CircleHelp, CreditCard, LayoutDashboard,
-  LogOut, Menu, MoreHorizontal, Package, Plus, Search, Settings, ShoppingBag,
+  Eye, LogOut, Menu, MoreHorizontal, Package, Plus, Settings, ShoppingBag,
   Tag, Users, X,
 } from 'lucide-react'
 import ProductsPage from './features/products/components/ProductsPage'
@@ -75,7 +75,7 @@ function Topbar({ title, onMenu }: { title: string; onMenu: () => void }) {
   return <header className="topbar">
     <button className="icon-button mobile-menu" aria-label="Open navigation" onClick={onMenu}><Menu size={20} /></button>
     <div className="breadcrumbs"><span>Workspace</span><ChevronRight size={14} /><strong>{title}</strong></div>
-    <div className="topbar-actions"><button className="search-shortcut" onClick={() => navigate('/admin/products')} aria-label="Open product search"><Search size={15} /><span>Search products...</span><kbd>⌘ K</kbd></button><button className="icon-button top-help" aria-label="Help and settings" title="Help and settings" onClick={() => navigate(appRole === 'ADMIN' ? '/admin/settings' : '/admin/products')}><CircleHelp size={18} /></button><div className="notification-wrap"><button className="notification-button" aria-label="Notifications" aria-expanded={notificationsOpen} onClick={() => setNotificationsOpen(open => !open)}><Bell size={18} />{attentionProducts.length > 0 && <i />}</button>{notificationsOpen && <section className="notification-popover" aria-label="Product notifications"><strong>Catalog alerts</strong>{productsQuery.isPending ? <p>Checking stock…</p> : productsQuery.isError ? <p>Catalog alerts are unavailable.</p> : attentionProducts.length ? <><p>{attentionProducts.length} product{attentionProducts.length === 1 ? '' : 's'} have 10 or fewer units.</p>{attentionProducts.slice(0, 3).map(product => <Link key={product.id} to={`/admin/products/${product.id}`} onClick={() => setNotificationsOpen(false)}><span>{product.title}</span><b>{product.stock} left</b></Link>)}<Link className="notification-all" to="/admin/products" onClick={() => setNotificationsOpen(false)}>Open product catalog</Link></> : <p>All products are above the low stock threshold.</p>}</section>}</div><div className="topbar-divider" /><div className="top-profile"><Link className="top-profile-identity" to="/account" title="View your full profile"><span className="profile-avatar">{user?.image ? <img src={user.image} alt=""/> : `${user?.firstName[0] ?? ''}${user?.lastName[0] ?? ''}`}</span><span className="top-profile-name">{user ? `${user.firstName} ${user.lastName}` : ''}</span></Link><button className="icon-button logout-button" aria-label="Sign out" title="Sign out" onClick={() => { logout(); navigate('/login', { replace: true }) }}><LogOut size={16}/></button></div></div>
+    <div className="topbar-actions"><a className="storefront-preview-link" href="/shop" target="_blank" rel="noreferrer" aria-label="Open storefront in a new tab"><Eye size={15}/><span>View storefront</span><ArrowUpRight size={13}/></a><button className="icon-button top-help" aria-label="Help and settings" title="Help and settings" onClick={() => navigate(appRole === 'ADMIN' ? '/admin/settings' : '/admin/products')}><CircleHelp size={18} /></button><div className="notification-wrap"><button className="notification-button" aria-label="Notifications" aria-expanded={notificationsOpen} onClick={() => setNotificationsOpen(open => !open)}><Bell size={18} />{attentionProducts.length > 0 && <i />}</button>{notificationsOpen && <section className="notification-popover" aria-label="Product notifications"><strong>Catalog alerts</strong>{productsQuery.isPending ? <p>Checking stock…</p> : productsQuery.isError ? <p>Catalog alerts are unavailable.</p> : attentionProducts.length ? <><p>{attentionProducts.length} product{attentionProducts.length === 1 ? '' : 's'} have 10 or fewer units.</p>{attentionProducts.slice(0, 3).map(product => <Link key={product.id} to={`/admin/products/${product.id}`} onClick={() => setNotificationsOpen(false)}><span>{product.title}</span><b>{product.stock} left</b></Link>)}<Link className="notification-all" to="/admin/products" onClick={() => setNotificationsOpen(false)}>Open product catalog</Link></> : <p>All products are above the low stock threshold.</p>}</section>}</div><div className="topbar-divider" /><div className="top-profile"><Link className="top-profile-identity" to="/account" title="View your full profile"><span className="profile-avatar">{user?.image ? <img src={user.image} alt=""/> : `${user?.firstName[0] ?? ''}${user?.lastName[0] ?? ''}`}</span><span className="top-profile-name">{user ? `${user.firstName} ${user.lastName}` : ''}</span></Link><button className="icon-button logout-button" aria-label="Sign out" title="Sign out" onClick={() => { logout(); navigate('/login', { replace: true }) }}><LogOut size={16}/></button></div></div>
   </header>
 }
 
@@ -85,9 +85,16 @@ function Dashboard() {
   const productsQuery = useProducts('')
   const categoriesQuery = useProductCategories()
   const products = productsQuery.data?.products ?? []
-  const productCount = productsQuery.isPending ? '—' : String(products.length)
-  const categoryCount = categoriesQuery.isPending ? '—' : String(categoriesQuery.data?.length ?? 0)
+  const productCount = productsQuery.isPending || productsQuery.isError ? '—' : String(products.length)
+  const categoryCount = categoriesQuery.isPending || categoriesQuery.isError ? '—' : String(categoriesQuery.data?.length ?? 0)
   const averagePrice = products.length ? products.reduce((sum, product) => sum + product.price, 0) / products.length : 0
+  const lowStockCount = products.filter(product => product.stock <= 10).length
+  const totalStockUnits = products.reduce((sum, product) => sum + product.stock, 0)
+  const stockGroups = [
+    { label: 'Healthy stock', count: products.filter(product => product.stock > 10).length, color: '#6d8d76' },
+    { label: 'Low stock', count: products.filter(product => product.stock > 0 && product.stock <= 10).length, color: '#c69b61' },
+    { label: 'Out of stock', count: products.filter(product => product.stock <= 0).length, color: '#bd806e' },
+  ]
   const recentProducts = [...products].sort((a, b) => b.id - a.id).slice(0, 4)
   const categoryColors = ['#6d8d76', '#a3b7a6', '#d5dfd6', '#e8eee9']
   const categoryBreakdown = (categoriesQuery.data ?? []).map(category => ({ label: category.name, value: products.filter(product => product.category === category.slug).length })).filter(category => category.value > 0).sort((a, b) => b.value - a.value).slice(0, 4)
@@ -97,19 +104,19 @@ function Dashboard() {
   return <div className="page-content">
     <div className="page-heading"><div><div className="eyebrow">{new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(new Date()).toUpperCase()}</div><h1>Good morning, {user?.firstName ?? 'there'} <span>✳</span></h1><p>Here’s what’s happening with your store today.</p></div><Link className="primary-button" to="/admin/products/create"><Plus size={17} /> Add product</Link></div>
     <div className="stats-grid">
-      <StatCard label="Total products" value={productCount} change="Current catalog" note="products available" icon={ShoppingBag} />
-      <StatCard label="Total categories" value={categoryCount} change="Current catalog" note="product categories" icon={Tag} />
-      <StatCard label="Average product price" value={productsQuery.isPending ? '—' : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(averagePrice)} change="Catalog average" note="per product" icon={CreditCard} />
-      <StatCard label="Products displayed" value={productCount} change="All products" note="across your catalog" icon={Users} />
+      <StatCard label="Total products" value={productCount} note="Products available" icon={ShoppingBag} />
+      <StatCard label="Total categories" value={categoryCount} note="Product categories" icon={Tag} />
+      <StatCard label="Average product price" value={productsQuery.isPending || productsQuery.isError ? '—' : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(averagePrice)} note="Across the current catalog" icon={CreditCard} />
+      <StatCard label="Low stock products" value={productsQuery.isPending || productsQuery.isError ? '—' : String(lowStockCount)} note="10 or fewer units" icon={Users} />
     </div>
     <div className="dashboard-grid">
-      <section className="panel revenue-panel"><div className="panel-heading"><div><h2>Store overview</h2><p>Sample performance overview</p></div><span className="neutral-pill">Demo data</span></div>
-        <div className="revenue-summary"><strong>$12,486.00</strong><span className="change-pill"><ArrowUpRight size={14} /> 8.2%</span><small>compared to $11,540 last week</small></div>
-        <div className="chart-wrap"><div className="chart-y"><span>$4k</span><span>$3k</span><span>$2k</span><span>$1k</span><span>$0</span></div><div className="chart-area"><div className="chart-gridlines"><i/><i/><i/><i/><i/></div><svg className="line-chart" viewBox="0 0 680 178" preserveAspectRatio="none" role="img" aria-label="Revenue trend has generally increased during the past week"><defs><linearGradient id="fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#61876e" stopOpacity=".18"/><stop offset="100%" stopColor="#61876e" stopOpacity="0"/></linearGradient></defs><path d="M0 139 C28 125 42 132 65 115 S106 118 132 105 S165 110 196 83 S243 95 266 77 S306 86 333 69 S376 80 400 57 S441 75 464 51 S510 61 533 41 S578 62 600 34 S650 43 680 18 L680 178 L0 178 Z" fill="url(#fill)"/><path d="M0 139 C28 125 42 132 65 115 S106 118 132 105 S165 110 196 83 S243 95 266 77 S306 86 333 69 S376 80 400 57 S441 75 464 51 S510 61 533 41 S578 62 600 34 S650 43 680 18" fill="none" stroke="#668a70" strokeWidth="2.5" vectorEffect="non-scaling-stroke"/></svg><div className="chart-x"><span>Oct 09</span><span>Oct 10</span><span>Oct 11</span><span>Oct 12</span><span>Oct 13</span><span>Oct 14</span><span>Oct 15</span></div></div></div>
+      <section className="panel revenue-panel"><div className="panel-heading"><div><h2>Inventory overview</h2><p>Stock levels in the current product catalog</p></div><span className="neutral-pill">Live catalog</span></div>
+        <div className="revenue-summary"><strong>{productsQuery.isPending || productsQuery.isError ? '—' : totalStockUnits.toLocaleString()}</strong><small>Total units in stock</small></div>
+        <div className="inventory-breakdown">{stockGroups.map(group => <div className="inventory-breakdown-row" key={group.label}><div><span>{group.label}</span><strong>{productsQuery.isPending || productsQuery.isError ? '—' : group.count}</strong></div><span className="inventory-track"><i style={{ width: `${products.length ? group.count / products.length * 100 : 0}%`, backgroundColor: group.color }}/></span></div>)}</div>
       </section>
       <section className="panel category-panel"><div className="panel-heading"><div><h2>Products by category</h2><p>Current catalog breakdown</p></div><Link className="text-button" to="/admin/categories" aria-label="Manage categories"><MoreHorizontal size={19}/></Link></div><div className="donut-wrap"><div className="donut" style={{ background: categoryGradient }}><div><strong>{productCount}</strong><span>products</span></div></div><div className="category-legend">{categoryBreakdown.map((category, index) => <Legend key={category.label} color={categoryColors[index]} label={category.label} value={`${products.length ? Math.round(category.value / products.length * 100) : 0}%`}/>)}</div></div></section>
     </div>
-    <section className="panel products-panel"><div className="panel-heading"><div><h2>Recently added</h2><p>Latest products in your catalog</p></div><Link className="text-button" to="/admin/products">View all products <ArrowUpRight size={14} /></Link></div><div className="table-scroll"><table><thead><tr><th>PRODUCT</th><th>CATEGORY</th><th>PRICE</th><th>STOCK</th><th>STATUS</th><th /></tr></thead><tbody>{productsQuery.isPending ? <tr><td colSpan={6}>Loading products…</td></tr> : productsQuery.isError ? <tr><td colSpan={6}>Could not load products. <button className="text-button" onClick={() => void productsQuery.refetch()}>Retry</button></td></tr> : recentProducts.map(product => <DashboardProductRow product={product} key={product.id}/>)}</tbody></table></div><div className="table-footer"><span>Showing <strong>{recentProducts.length}</strong> of <strong>{productCount}</strong> products</span><Link className="text-button" to="/admin/products">See all products <ArrowUpRight size={14}/></Link></div></section>
+    <section className="panel products-panel"><div className="panel-heading"><div><h2>Recently added</h2><p>Latest products in your catalog</p></div><Link className="text-button" to="/admin/products">View all products <ArrowUpRight size={14} /></Link></div><div className="table-scroll"><table><thead><tr><th>PRODUCT</th><th>CATEGORY</th><th>PRICE</th><th>STOCK</th><th>STATUS</th><th /></tr></thead><tbody>{productsQuery.isPending ? <tr><td colSpan={6}>Loading products…</td></tr> : productsQuery.isError ? <tr><td colSpan={6}>Could not load products. <button className="text-button" onClick={() => void productsQuery.refetch()}>Retry</button></td></tr> : recentProducts.map(product => <DashboardProductRow product={product} key={product.id}/>)}</tbody></table></div><div className="table-footer"><span>Showing <strong>{recentProducts.length}</strong> of <strong>{productCount}</strong> products</span></div></section>
   </div>
 }
 
@@ -120,8 +127,8 @@ function DashboardProductRow({ product }: { product: Product }) {
 }
 
 // A single summary card component ensures metric cards share layout and status styling.
-function StatCard({ label, value, change, note, icon: Icon, positive }: { label: string; value: string; change: string; note: string; icon: typeof Package; positive?: boolean }) {
-  return <article className="stat-card"><div className="stat-top"><span>{label}</span><div className="stat-icon"><Icon size={17} strokeWidth={1.8}/></div></div><div className="stat-bottom"><strong>{value}</strong><div className="stat-note">{positive === true && <span className="positive"><ArrowUpRight size={13}/>{change}</span>}{positive === false && <span className="negative"><ArrowDownRight size={13}/>{change}</span>}{positive === undefined && <span className="neutral-pill">{change}</span>}<span>{note}</span></div></div></article>
+function StatCard({ label, value, note, icon: Icon }: { label: string; value: string; note: string; icon: typeof Package }) {
+  return <article className="stat-card"><div className="stat-top"><span>{label}</span><div className="stat-icon"><Icon size={17} strokeWidth={1.8}/></div></div><div className="stat-bottom"><strong>{value}</strong><span className="stat-note">{note}</span></div></article>
 }
 // Shared legend rows keep chart labels aligned with their category color and share.
 function Legend({ color, label, value }: { color: string; label: string; value: string }) { return <div className="legend-row"><i style={{ backgroundColor: color }}/><span>{label}</span><strong>{value}</strong></div> }
