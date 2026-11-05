@@ -11,9 +11,9 @@ export interface AuthenticatedUser {
   refreshToken: string
 }
 
-/** Inputs collected by the email-first login screen. */
+/** Inputs collected by the username-first login screen. */
 export interface LoginCredentials {
-  email: string
+  username: string
   password: string
   remember: boolean
 }

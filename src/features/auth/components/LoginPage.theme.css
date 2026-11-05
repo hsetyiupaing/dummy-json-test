@@ -1,0 +1,5 @@
+/* Warm paper tones and editorial headings give the login view a distinct branded surface. */
+.auth-screen{background:radial-gradient(ellipse at 50% 0%,#f3ead9 0%,#f8f4ec 48%,#f4efe6 100%)}
+.login-heading h1,.login-success-card h1{font-family:Georgia,"Times New Roman",serif;font-weight:500;letter-spacing:-.35px}
+.auth-logo,.login-submit{background:#315b43}
+.login-submit:hover:not(:disabled){background:#264b36}
